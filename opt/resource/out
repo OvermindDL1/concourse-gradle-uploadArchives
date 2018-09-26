@@ -1,0 +1,22 @@
+#!/bin/sh
+
+set -e
+
+#exec 3>&1 # make stdout available as fd 3 so as to not mix-in command output
+#exec 1>&2 # redirect all normal output to stderr for logging
+
+PARAMS="$(cat)"
+URL="$(echo "$PARAMS" | jq -r '.source.url//empty')"
+PUT_URL="$(echo "$PARAMS" | jq -r ".source[\"put-url\"] // \"$URL\"")"
+DIR="$(echo "$PARAMS" | jq -r ".source.dir // \"$1\"")"
+CMD="$(echo "$PARAMS" | jq -r ".source.cmd // \"gradle uploadArchives\"")"
+
+[ -z "$URL" ] && echo "Maven 'url' not set" >&2 && exit 0
+
+MAVEN_ENV="$(echo "$PARAMS" | jq -r '.source.env | to_entries | map((.key)+"="+(.value|tostring)) | join(" ") // empty')"
+
+[ -z "$PUT_URL" ] && PUT_URL="$URL"
+
+cd "$DIR"
+$MAVEN_ENV $CMD
+

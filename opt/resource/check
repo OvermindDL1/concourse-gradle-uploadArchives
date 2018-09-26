@@ -1,0 +1,32 @@
+#!/bin/sh
+
+set -e
+
+#exec 3>&1 # make stdout available as fd 3 so as to not mix-in command output
+#exec 1>&2 # redirect all normal output to stderr for logging
+
+PARAMS="$(cat)"
+URL="$(echo "$PARAMS" | jq -r '.source.url//empty')"
+GROUP="$(echo "$PARAMS" | jq -r '.source.group//empty' | sed 's/\./\//g')"
+NAME="$(echo "$PARAMS" | jq -r '.source.name//empty')"
+VERSION="$(echo "$PARAMS" | jq -r '.source.version//empty')"
+
+[ -z "$URL" ] && echo "Maven 'url' not set" >&2 && exit 0
+[ -z "$GROUP" ] && echo "Maven 'group' not set" >&2 && exit 0
+[ -z "$NAME" ] && echo "Maven 'name' not set" >&2 && exit 0
+
+if [ -z "$VERSION" ]; then # if version is empty then get latest release
+	METADATA=$(curl -L "$URL/$GROUP/$NAME/maven-metadata.xml" 2>/dev/null)
+	LAST_RELEASE="$(echo "$METADATA" | xmllint --xpath '//metadata/versioning/release//text()' -)"
+	jq -cn "[{ref: \"$LAST_RELEASE\"}]"
+else # get information on that specific release
+	LAST_UPDATE="$(curl -LI "$URL/$GROUP/$NAME/$VERSION/$NAME-$VERSION.jar" 2>/dev/null | grep -i 'Last-Modified:' | head -n 1 | sed 's/[lL][aA][sS][tT]-[mM][oO][dD][iI][fF][iI][eE][dD]: *//' | sed 's/\r//')"
+	if [ -z "$LAST_UPDATE" ]; then
+		echo "No 'Last-Modified' header at: $URL/$GROUP/$NAME/$NAME-$VERSION.jar" >&2
+		echo '[]'
+		exit 1
+	else
+		jq -cn "[{ref: \"$LAST_UPDATE\"}]"
+	fi
+fi
+
