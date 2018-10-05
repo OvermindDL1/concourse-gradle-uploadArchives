@@ -6,10 +6,13 @@ set -e
 #exec 1>&2 # redirect all normal output to stderr for logging
 
 PARAMS="$(cat)"
+DEBUG="$(echo "$PARAMS" | jq -r '.source.debug//empty')"
 URL="$(echo "$PARAMS" | jq -r '.source.url//empty')"
 GROUP="$(echo "$PARAMS" | jq -r '.source.group//empty' | sed 's/\./\//g')"
 NAME="$(echo "$PARAMS" | jq -r '.source.name//empty')"
 VERSION="$(echo "$PARAMS" | jq -r '.source.version//empty')"
+
+[ -z "$DEBUG" ] && echo "DEBUG: $PARAMS" >&2
 
 [ -z "$URL" ] && echo "Maven 'url' not set" >&2 && exit 0
 [ -z "$GROUP" ] && echo "Maven 'group' not set" >&2 && exit 0

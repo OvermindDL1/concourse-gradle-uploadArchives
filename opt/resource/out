@@ -6,17 +6,24 @@ set -e
 #exec 1>&2 # redirect all normal output to stderr for logging
 
 PARAMS="$(cat)"
+DEBUG="$(echo "$PARAMS" | jq -r '.source.debug//empty')"
 URL="$(echo "$PARAMS" | jq -r '.source.url//empty')"
-PUT_URL="$(echo "$PARAMS" | jq -r ".source[\"put-url\"] // \"$URL\"")"
+PUT_URL="$(echo "$PARAMS" | jq -r ".source[\"put-url\"]//empty")"
+[ -z "$PUT_URL" ] || PUT_URL="$URL"
 DIR="$(echo "$PARAMS" | jq -r ".source.dir // \"$1\"")"
 CMD="$(echo "$PARAMS" | jq -r ".source.cmd // \"gradle uploadArchives\"")"
 
 [ -z "$URL" ] && echo "Maven 'url' not set" >&2 && exit 0
 
-MAVEN_ENV="$(echo "$PARAMS" | jq -r '.source.env | to_entries | map((.key)+"="+(.value|tostring)) | join(" ") // empty')"
+MAVEN_ENV="$(echo "$PARAMS" | jq -r '.source.env | to_entries | map("export "+(.key|gsub("[^a-zA-Z0-9_]+";"_"))+"="+(.value|tostring|@sh)) | join("\n") // empty')"
 
-[ -z "$PUT_URL" ] && PUT_URL="$URL"
+[ -z "$DEBUG" ] && echo "DEBUG: $PARAMS" >&2
 
-cd "$DIR"
-$MAVEN_ENV $CMD
+sh -c "
+  cd \"$DIR\"
+  $MAVEN_ENV
+  $CMD
+" >&2
+
+echo "$PARAMS" | /opt/resource/check
 
