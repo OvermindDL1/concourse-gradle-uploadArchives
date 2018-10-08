@@ -34,6 +34,6 @@ VERSION=$(sh -c "cd '$1'; $VERSION_CMD")
 METADATA='[]'
 [ -z "$METADATA_CMD" ] || METADATA=$(sh -c "$METADATA_CMD")
 [ -z "$DEBUG" ] || echo "DEBUG VERSION METADATA: $VERSION : $METADATA"
-jq -cn "{ref: \"$VERSION\", metadata: $METADATA}"
+jq -cn "{version: {ref: \"$VERSION\"}, metadata: $METADATA}"
 
 

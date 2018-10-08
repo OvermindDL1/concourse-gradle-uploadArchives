@@ -37,7 +37,7 @@ else # get information on that specific release
 		exit 1
 	else
 		curl -L "$URL/$GROUP/$NAME/$VERSION/$NAME-$VERSION.jar" 2>/dev/null > "$1/$NAME-$VERSION$CLASSIFIER.jar" || exit 2
-		jq -cn "{ref: \"$LAST_UPDATE\", metadata: {}}"
+		jq -cn "{version: {ref: \"$LAST_UPDATE\"}, metadata: []}"
 	fi
 fi
 
