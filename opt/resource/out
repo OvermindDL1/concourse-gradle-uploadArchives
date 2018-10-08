@@ -13,11 +13,14 @@ PUT_URL="$(echo "$PARAMS" | jq -r ".source[\"put-url\"]//empty")"
 DIR="$(echo "$PARAMS" | jq -r ".source.dir // \"$1\"")"
 CMD="$(echo "$PARAMS" | jq -r ".source.cmd // \"gradle uploadArchives\"")"
 
+VERSION_CMD="$(echo "$PARAMS" | jq -r ".params[\"version-cmd\"]//empty")"
+METADATA_CMD="$(echo "$PARAMS" | jq -r ".params[\"metadata-cmd\"]//empty")"
+
 [ -z "$URL" ] && echo "Maven 'url' not set" >&2 && exit 0
 
 MAVEN_ENV="$(echo "$PARAMS" | jq -r '.source.env | to_entries | map("export "+(.key|gsub("[^a-zA-Z0-9_]+";"_"))+"="+(.value|tostring|@sh)) | join("\n") // empty')"
 
-[ -z "$DEBUG" ] && echo "DEBUG: $PARAMS" >&2
+[ -z "$DEBUG" ] || echo "DEBUG: $PARAMS" >&2
 
 sh -c "
   cd \"$DIR\"
@@ -25,5 +28,12 @@ sh -c "
   $CMD
 " >&2
 
-echo "$PARAMS" | /opt/resource/check
+#VERSIONS=$(echo "$PARAMS" | /opt/resource/check)
+
+VERSION=$(sh -c "$VERSION_CMD")
+METADATA='[]'
+[ -z "$METADATA_CMD" ] || METADATA=$(sh -c "$METADATA_CMD")
+[ -z "$DEBUG" ] || echo "DEBUG VERSION METADATA: $VERSION : $METADATA"
+jq -cn "{ref: \"$VERSION\", metadata: $METADATA}"
+
 
