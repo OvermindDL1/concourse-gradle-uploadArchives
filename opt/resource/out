@@ -10,7 +10,7 @@ DEBUG="$(echo "$PARAMS" | jq -r '.source.debug//empty')"
 URL="$(echo "$PARAMS" | jq -r '.source.url//empty')"
 PUT_URL="$(echo "$PARAMS" | jq -r ".source[\"put-url\"]//empty")"
 [ -z "$PUT_URL" ] || PUT_URL="$URL"
-DIR="$(echo "$PARAMS" | jq -r ".source.dir // \"$1\"")"
+DIR="$(echo "$PARAMS" | jq -r ".source.dir//empty")"
 CMD="$(echo "$PARAMS" | jq -r ".source.cmd // \"gradle uploadArchives\"")"
 
 VERSION_CMD="$(echo "$PARAMS" | jq -r ".params[\"version-cmd\"]//empty")"
@@ -23,14 +23,14 @@ MAVEN_ENV="$(echo "$PARAMS" | jq -r '.source.env | to_entries | map("export "+(.
 [ -z "$DEBUG" ] || echo "DEBUG: $PARAMS" >&2
 
 sh -c "
-  cd \"$DIR\"
+  cd \"$1/$DIR\"
   $MAVEN_ENV
   $CMD
 " >&2
 
 #VERSIONS=$(echo "$PARAMS" | /opt/resource/check)
 
-VERSION=$(sh -c "$VERSION_CMD")
+VERSION=$(sh -c "cd '$1'; $VERSION_CMD")
 METADATA='[]'
 [ -z "$METADATA_CMD" ] || METADATA=$(sh -c "$METADATA_CMD")
 [ -z "$DEBUG" ] || echo "DEBUG VERSION METADATA: $VERSION : $METADATA"
