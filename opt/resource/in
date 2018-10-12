@@ -28,6 +28,7 @@ if [ -z "$VERSION" ]; then # if version is empty then get latest release
 	LAST_RELEASE="$(echo "$METADATA" | xmllint --xpath '//metadata/versioning/release//text()' -)"
 	[ -z "$DEBUG" ] || echo "DEBUG LAST_RELEASE: $LAST_RELEASE" >&2
 	curl -L "$URL/$GROUP/$NAME/$LAST_RELEASE/$NAME-$LAST_RELEASE$CLASSIFIER.jar" 2>/dev/null > "$1/$NAME-$LAST_RELEASE$CLASSIFIER.jar" || exit 4
+	echo $LAST_RELEASE > "$1"/version
 	jq -cn "{version: {ref: \"$LAST_RELEASE\"}, metadata: [{name: \"ref\", value: \"$LAST_RELEASE\"}]}"
 else # get information on that specific release
 	LAST_UPDATE="$(curl -LI "$URL/$GROUP/$NAME/$VERSION/$NAME-$VERSION$CLASSIFIER.jar" 2>/dev/null | grep -i 'Last-Modified:' | head -n 1 | sed 's/[lL][aA][sS][tT]-[mM][oO][dD][iI][fF][iI][eE][dD]: *//' | sed 's/\r//')"
@@ -37,6 +38,7 @@ else # get information on that specific release
 		exit 1
 	else
 		curl -L "$URL/$GROUP/$NAME/$VERSION/$NAME-$VERSION.jar" 2>/dev/null > "$1/$NAME-$VERSION$CLASSIFIER.jar" || exit 2
+		echo $LAST_UPDATE > "$1"/version
 		jq -cn "{version: {ref: \"$LAST_UPDATE\"}, metadata: [{name: \"ref\", value: \"$LAST_VERSION\"}]}"
 	fi
 fi
