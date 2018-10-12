@@ -30,7 +30,11 @@ sh -c "
 
 #VERSIONS=$(echo "$PARAMS" | /opt/resource/check)
 
-VERSION=$(sh -c "cd '$1'; $VERSION_CMD")
+if [ -z "$VERSION_CMD" ]; then
+	VERSION=$(sh -c "cd '$1'; $VERSION_CMD")
+else
+	VERSION=$(echo "$PARAMS" | /opt/resource/check | jq -r '.[0].ref')
+fi
 METADATA='[]'
 [ -z "$METADATA_CMD" ] || METADATA=$(sh -c "$METADATA_CMD")
 [ -z "$DEBUG" ] || echo "DEBUG VERSION METADATA: $VERSION : $METADATA" >&2

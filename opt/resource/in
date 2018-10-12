@@ -12,6 +12,7 @@ GROUP="$(echo "$PARAMS" | jq -r '.source.group//empty' | sed 's/\./\//g')"
 NAME="$(echo "$PARAMS" | jq -r '.source.name//empty')"
 VERSION="$(echo "$PARAMS" | jq -r '.source.version//empty')"
 CLASSIFIER="$(echo "$PARAMS" | jq -r '.source.classifier//empty')"
+FILTER="$(echo "$PARAMS" | jq -r '.source.filter//empty')"
 
 [ -z "$DEBUG" ] || echo "DEBUG: $PARAMS" >&2
 
@@ -34,10 +35,10 @@ else # get information on that specific release
 	LAST_UPDATE="$(curl -LI "$URL/$GROUP/$NAME/$VERSION/$NAME-$VERSION$CLASSIFIER.jar" 2>/dev/null | grep -i 'Last-Modified:' | head -n 1 | sed 's/[lL][aA][sS][tT]-[mM][oO][dD][iI][fF][iI][eE][dD]: *//' | sed 's/\r//')"
 	[ -z "$DEBUG" ] || echo "DEBUG LAST_UPDATE: $LAST_UPDATE" >&2
 	if [ -z "$LAST_UPDATE" ]; then
-		echo "No 'Last-Modified' header at: $URL/$GROUP/$NAME/$NAME-$VERSION.jar" >&2
+		echo "No 'Last-Modified' header at: $URL/$GROUP/$NAME/$NAME-$VERSION$CLASSIFIER.jar" >&2
 		exit 1
 	else
-		curl -L "$URL/$GROUP/$NAME/$VERSION/$NAME-$VERSION.jar" 2>/dev/null > "$1/$NAME-$VERSION$CLASSIFIER.jar" || exit 2
+		curl -L "$URL/$GROUP/$NAME/$VERSION/$NAME-$VERSION$CLASSIFIER.jar" 2>/dev/null > "$1/$NAME-$VERSION$CLASSIFIER.jar" || exit 2
 		echo $LAST_UPDATE > "$1"/version
 		jq -cn "{version: {ref: \"$LAST_UPDATE\"}, metadata: [{name: \"ref\", value: \"$LAST_VERSION\"}]}"
 	fi
